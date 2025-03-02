@@ -67,7 +67,7 @@
     </div>
 </div>
 
-<!-- Start of Comment Section -->
+<!-- Comment Section -->
 <div class="container">
     <div class="row">
         <div class="col-md-12">
@@ -101,57 +101,48 @@
 <script src="js/main.js"></script>
 
 <script>
-    // Load comments from localStorage
-    document.addEventListener('DOMContentLoaded', function () {
-        const storedComments = JSON.parse(localStorage.getItem('comments')) || [];
-        const name = localStorage.getItem('username');
-        if (name) {
-            document.getElementById('name').value = name;
-        }
-        storedComments.forEach(comment => {
-            displayComment(comment);
+// Fetch and display comments on page load
+document.addEventListener('DOMContentLoaded', function () {
+    fetch('/comments.php')
+        .then(response => response.json())
+        .then(data => {
+            const commentsDiv = document.getElementById('comments');
+            data.comments.forEach(comment => {
+                const commentDiv = document.createElement('div');
+                commentDiv.classList.add('comment');
+                commentDiv.innerHTML = `
+                    <strong>${comment.name}</strong> <small>(${new Date(comment.timestamp).toLocaleString()})</small>
+                    <p>${comment.text}</p>
+                `;
+                commentsDiv.appendChild(commentDiv);
+            });
         });
-    });
+});
 
-    // Function to submit a comment
-    function submitComment() {
-        const name = document.getElementById('name').value.trim();
-        const commentText = document.getElementById('comment').value.trim();
+// Submit a comment
+function submitComment() {
+    const name = document.getElementById('name').value.trim();
+    const commentText = document.getElementById('comment').value.trim();
 
-        if (name && commentText) {
-            const comment = {
+    if (name && commentText) {
+        fetch('/comments.php', {
+            method: 'POST',
+            body: new URLSearchParams({
                 name: name,
-                text: commentText,
-                timestamp: new Date().toISOString(),
-            };
-
-            // Store name in localStorage for future visits
-            localStorage.setItem('username', name);
-
-            // Get current comments from localStorage
-            const comments = JSON.parse(localStorage.getItem('comments')) || [];
-            comments.push(comment);
-            localStorage.setItem('comments', JSON.stringify(comments));
-
-            // Display the new comment
-            displayComment(comment);
+                comment: commentText
+            })
+        })
+        .then(response => response.text())
+        .then(data => {
+            alert('Comment submitted!');
             document.getElementById('comment').value = ''; // Clear textarea
-        } else {
-            alert('Please provide both name and comment.');
-        }
+            document.getElementById('name').value = ''; // Clear name field
+            location.reload(); // Reload to show new comment
+        });
+    } else {
+        alert('Please provide both name and comment.');
     }
-
-    // Function to display a comment
-    function displayComment(comment) {
-        const commentsDiv = document.getElementById('comments');
-        const commentDiv = document.createElement('div');
-        commentDiv.classList.add('comment');
-        commentDiv.innerHTML = `
-            <strong>${comment.name}</strong> <small>(${new Date(comment.timestamp).toLocaleString()})</small>
-            <p>${comment.text}</p>
-        `;
-        commentsDiv.appendChild(commentDiv);
-    }
+}
 </script>
 
 </body>
